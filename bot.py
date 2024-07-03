@@ -13,30 +13,28 @@ from rich.markdown import Markdown
 from rich.prompt import Prompt
 from datasets.utils.logging import disable_progress_bar
 from time import sleep
+from config import Config
 
 disable_progress_bar()
 
 console = Console()
 
 welcome_message = """
-# Welcome to the Together AI MoA (Mixture-of-Agents) interactive demo!
+¡Bienvenido a la demostración interactiva de Together AI MoA (Mixture-of-Agents)!
 
-Mixture of Agents (MoA) is a novel approach that leverages the collective strengths of multiple LLMs to enhance performance, achieving state-of-the-art results. By employing a layered architecture where each layer comprises several LLM agents, MoA significantly outperforms GPT-4 Omni’s 57.5% on AlpacaEval 2.0 with a score of 65.1%, using only open-source models!
+Mixture of Agents (MoA) es un enfoque novedoso que aprovecha las fortalezas colectivas de múltiples LLMs (Modelos de Lenguaje Grande) para mejorar el rendimiento, logrando resultados de vanguardia. Al emplear una arquitectura en capas donde cada capa está compuesta por varios agentes LLM, MoA supera significativamente el 57.5% de GPT-4 Omni en AlpacaEval 2.0 con una puntuación de 65.1%, ¡utilizando solo modelos de código abierto!
 
-This demo uses the following LLMs as reference models, then passes the results to the aggregate model for the final response:
-- Qwen/Qwen2-72B-Instruct
-- Qwen/Qwen1.5-72B-Chat
-- mistralai/Mixtral-8x22B-Instruct-v0.1
-- databricks/dbrx-instruct
+Este proyecto es un fork realizado por Esteban Calabria de Mixture-of-Agents (MoA) original (https://github.com/togethercomputer/MoA) modificado gracias a la idea de Matthew Berman (https://www.youtube.com/@matthew_berman) para que funcione con Groq.
 
 """
-
-default_reference_models = [
-    "Qwen/Qwen2-72B-Instruct",
-    "Qwen/Qwen1.5-72B-Chat",
-    "mistralai/Mixtral-8x22B-Instruct-v0.1",
-    "databricks/dbrx-instruct",
-]
+#CHANGE
+default_reference_models = Config.models
+#default_reference_models = [
+#    "llama3-8b-8192",
+#    "llama3-70b-8192",
+#    "mixtral-8x7b-32768",
+#    "gemma-7b-it"
+#]
 
 
 def process_fn(
@@ -83,10 +81,11 @@ def process_fn(
 
 
 def main(
-    model: str = "Qwen/Qwen2-72B-Instruct",
+    #model: str = "llama3-70b-8192", #CHANGE
+    model: str = Config.main_model,
     reference_models: list[str] = default_reference_models,
     temperature: float = 0.7,
-    max_tokens: int = 512,
+    max_tokens: int = 2048,
     rounds: int = 1,
     multi_turn=True,
 ):
@@ -114,11 +113,15 @@ def main(
         "model": [m for m in reference_models],
     }
 
+    if not Config.api_key:
+        Config.api_key = Prompt.ask("Enter your Groq API key: ")
+
     num_proc = len(reference_models)
 
     model = Prompt.ask(
-        "\n1. What main model do you want to use?",
-        default="Qwen/Qwen2-72B-Instruct",
+        "\n1. What main mod   el do you want to use?",
+        #default="llama3-70b-8192", #CHANGE
+        default=Config.main_model,
     )
     console.print(f"Selected {model}.", style="yellow italic")
     temperature = float(
@@ -131,8 +134,8 @@ def main(
     console.print(f"Selected {temperature}.", style="yellow italic")
     max_tokens = int(
         Prompt.ask(
-            "3. What max tokens do you want to use? [cyan bold](512) [/cyan bold]",
-            default=512,
+            "3. What max tokens do you want to use? [cyan bold](2048) [/cyan bold]",  #CHANGE
+            default=2048,  #CHANGE
             show_default=True,
         )
     )
@@ -199,8 +202,9 @@ def main(
 
         for chunk in output:
             out = chunk.choices[0].delta.content
-            console.print(out, end="")
-            all_output += out
+            if out is not None:
+                console.print(out, end="")
+                all_output += out
         print()
 
         if DEBUG:

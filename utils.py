@@ -6,6 +6,10 @@ import openai
 import copy
 
 from loguru import logger
+from config import Config
+
+from dotenv import load_dotenv
+load_dotenv()
 
 
 DEBUG = int(os.environ.get("DEBUG", "0"))
@@ -25,7 +29,8 @@ def generate_together(
 
         try:
 
-            endpoint = "https://api.together.xyz/v1/chat/completions"
+            #endpoint = "https://api.groq.com/openai/v1/chat/completions" #CHANGE endpoint = "https://api.together.xyz/v1/chat/completions"
+            endpoint = Config.endpoint
 
             if DEBUG:
                 logger.debug(
@@ -40,8 +45,9 @@ def generate_together(
                     "temperature": (temperature if temperature > 1e-4 else 0),
                     "messages": messages,
                 },
-                headers={
-                    "Authorization": f"Bearer {os.environ.get('TOGETHER_API_KEY')}",
+                headers={                    
+                    #"Authorization": f"Bearer {os.environ.get('GROQ_API_KEY')}",#CHANGE "Authorization": f"Bearer {os.environ.get('TOGETHER_API_KEY')}",
+                    "Authorization": f"Bearer {Config.api_key}",
                 },
             )
             if "error" in res.json():
@@ -80,11 +86,12 @@ def generate_together_stream(
     max_tokens=2048,
     temperature=0.7,
 ):
-    endpoint = "https://api.together.xyz/v1"
+    endpoint = "https://api.groq.com/openai/v1" #CHANGE endpoint = "https://api.together.xyz/v1"
     client = openai.OpenAI(
-        api_key=os.environ.get("TOGETHER_API_KEY"), base_url=endpoint
+        #api_key=os.environ.get("GROQ_API_KEY"), base_url=endpoint  #CHANGE
+        api_key=Config.api_key, base_url=endpoint  #CHANGE
     )
-    endpoint = "https://api.together.xyz/v1/chat/completions"
+    endpoint = "https://api.groq.com/openai/v1/chat/completions" #CHANGE
     response = client.chat.completions.create(
         model=model,
         messages=messages,
@@ -102,7 +109,8 @@ def generate_openai(
     max_tokens=2048,
     temperature=0.7,
 ):
-
+    #CHANGE : SACAR ESTO
+    print("USANDO API DE OPENAI")
     client = openai.OpenAI(
         api_key=os.environ.get("OPENAI_API_KEY"),
     )
